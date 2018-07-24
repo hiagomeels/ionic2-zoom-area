@@ -4,8 +4,8 @@ import { Gesture, Content, RootNode } from 'ionic-angular';
 import { ZoomAreaProvider } from './zoom-area.provider';
 
 @Component({
- selector: 'zoom-area',
- template: `
+  selector: 'zoom-area',
+  template: `
     <ion-content>
       <div #zoomAreaRoot class="zoom" (click)="toggleZoomControls()">
         <div class="fit">
@@ -28,239 +28,246 @@ import { ZoomAreaProvider } from './zoom-area.provider';
       </ion-fab>
     </ion-content>
 `,
- animations: [
+  animations: [
     trigger('visibilityChanged', [
       state('shown', style({ opacity: 1, display: 'block' })),
       state('hidden', style({ opacity: 0, display: 'none' })),
       transition('shown => hidden', animate('300ms')),
       transition('hidden => shown', animate('300ms')),
     ])
- ]
+  ]
 })
 export class ZoomAreaComponent implements OnChanges {
-    @ViewChild('zoomAreaRoot') zoom;
-    @ViewChild(Content) content: Content;
+  @ViewChild('zoomAreaRoot') zoom;
+  @ViewChild(Content) content: Content;
 
-    @Output() afterZoomIn = new EventEmitter<any>();
-    @Output() afterZoomOut = new EventEmitter<any>();
+  @Output() afterZoomIn = new EventEmitter<any>();
+  @Output() afterZoomOut = new EventEmitter<any>();
 
-    @Input() controls: boolean;
-    @Output() controlsChanged = new EventEmitter<boolean>();
+  @Input() controls: boolean;
+  @Output() controlsChanged = new EventEmitter<boolean>();
 
-    @Input() scale: number;
-    @Output() scaleChanged = new EventEmitter<number>();
+  @Input() scale: number;
+  @Output() scaleChanged = new EventEmitter<number>();
 
-    zoomControlsState;
-    zoomRootElement;
-    gesture;
+  zoomControlsState;
+  zoomRootElement;
+  gesture;
 
-    constructor (
-      public zoomAreaProvider: ZoomAreaProvider
-    ) {
-      this.zoomControlsState = 'hidden';
-    }
+  constructor(
+    public zoomAreaProvider: ZoomAreaProvider
+  ) {
+    this.zoomControlsState = 'hidden';
+  }
 
-    ngOnChanges (changes: SimpleChanges) {
-      if ('controls' in changes) {
-        let showControls = changes['controls'];
+  ngOnChanges(changes: SimpleChanges) {
+    if ('controls' in changes) {
+      let showControls = changes['controls'];
 
-        if (showControls && showControls.currentValue) {
-          this.zoomControlsState = 'shown';
-        } else {
-          this.zoomControlsState = 'hidden';
-        }
-      }
-
-      if ('scale' in changes) {
-        let scaleValue = changes['scale'];
-
-        if (scaleValue && scaleValue.currentValue && scaleValue.currentValue === 1) {
-          this.zoomReset();
-        }
+      if (showControls && showControls.currentValue) {
+        this.zoomControlsState = 'shown';
+      } else {
+        this.zoomControlsState = 'hidden';
       }
     }
 
-    ngAfterViewInit () {
-      this.content.ionScroll.subscribe((data)=>{
-        this.zoomAreaProvider.notifyScroll(data);
-      });
-
-      this._pinchZoom(this.zoom.nativeElement, this.content);
-
-      // Watch for user setCenter call
-      let self = this;
-      this.zoomAreaProvider.centerChanged$.subscribe(coords => {
-        if (self.zoomConfig.scale === 1) {
-          return;
-        }
-
-        self.setCoor(coords.x, coords.y);
-        self.transform(coords.x, coords.y);
-      });
-    }
-
-    zoomConfig = {
-      ow: 0,
-      oh: 0,
-      original_x: 0,
-      original_y: 0,
-      max_x: 0,
-      max_y: 0,
-      min_x: 0,
-      min_y: 0,
-      x: 0,
-      y: 0,
-      last_x: 0,
-      last_y: 0,
-      scale: 1,
-      base: 1,
-    };
-
-    toggleZoomControls () {
-      this.zoomControlsState = this.zoomControlsState === 'shown' ? 'hidden' : 'shown';
-    }
-  
-    zoomIn () {
-      this.zoomConfig.scale += 1;
-  
-      if (this.zoomConfig.scale > 1) {
-        this.zoomAreaProvider.notifyScrollState(this.zoomAreaProvider.SCROLL_STATE.COLAPSED);
+    if ('scale' in changes) {
+      let scaleValue = changes['scale'];
+      if (scaleValue && scaleValue.currentValue && scaleValue.currentValue === 1) {
+        this.zoomReset();
       }
-  
-      if (this.zoomConfig.scale > 4) {
-        this.zoomConfig.scale = 4;
-      }
-
-      this.transform();
-      this.afterZoomIn.emit();
     }
-  
-    zoomOut (reset?) {
-      if (!this.zoomRootElement) {
+  }
+
+  ngAfterViewInit() {
+    this.content.ionScroll.subscribe((data) => {
+      this.zoomAreaProvider.notifyScroll(data);
+    });
+
+    this._pinchZoom(this.zoom.nativeElement, this.content);
+
+    // Watch for user setCenter call
+    let self = this;
+    this.zoomAreaProvider.centerChanged$.subscribe(coords => {
+      if (self.zoomConfig.scale === 1) {
         return;
       }
-  
-      this.zoomConfig.scale -= 1;
-  
-      if (this.zoomConfig.scale < 1) {
-        this.zoomConfig.scale = 1;
-      }
-  
-      if (this.zoomConfig.scale === 1) {
-        reset = true;
-        this.zoomAreaProvider.notifyScrollState(this.zoomAreaProvider.SCROLL_STATE.NORMAL);
-      }
-  
-      reset ? this.transform(0.1, 0.1) : this.transform();
-  
-      this.afterZoomOut.emit();
+
+      self.setCoor(coords.x, coords.y);
+      self.transform(coords.x, coords.y);
+    });
+  }
+
+  zoomConfig = {
+    ow: 0,
+    oh: 0,
+    original_x: 0,
+    original_y: 0,
+    max_x: 0,
+    max_y: 0,
+    min_x: 0,
+    min_y: 0,
+    x: 0,
+    y: 0,
+    last_x: 0,
+    last_y: 0,
+    scale: 1,
+    last_scale: 1,
+    center: { x: null, y: null },
+    max_scale: 4,
+    min_scale: 1
+  };
+
+  toggleZoomControls() {
+    // this.zoomControlsState = this.zoomControlsState === 'shown' ? 'hidden' : 'shown';
+    this.zoomControlsState = 'hidden';
+  }
+
+  zoomIn() {
+    this.zoomConfig.scale += 1;
+
+    if (this.zoomConfig.scale > 1) {
+      this.zoomAreaProvider.notifyScrollState(this.zoomAreaProvider.SCROLL_STATE.COLAPSED);
     }
-  
-    zoomReset () {
-      this.zoomConfig.scale = 1;
-      if (this.content && this.content.scrollTop) {
-        this.content.scrollTop = 0;
-      }
-      this.zoomOut(true);
+
+    if (this.zoomConfig.scale > this.zoomConfig.max_scale) {
+      this.zoomConfig.scale = this.zoomConfig.max_scale;
     }
-  
-    private _pinchZoom(elm: HTMLElement, content: Content): void {
-      this.zoomRootElement = elm;
-      this.gesture = new Gesture(this.zoomRootElement);
-  
-      for (let i = 0; i < elm.children.length; i++) {
-        let c = <HTMLElement>elm.children.item(i);
-        this.zoomConfig.ow = c.offsetWidth;
-        this.zoomConfig.oh += c.offsetHeight;
-      }
-  
-      this.zoomConfig.original_x = content.contentWidth - this.zoomConfig.ow;
-      this.zoomConfig.original_y = content.contentHeight - this.zoomConfig.oh;
-      this.zoomConfig.max_x = this.zoomConfig.original_x;
-      this.zoomConfig.max_y = this.zoomConfig.original_y;
-      this.zoomConfig.base = this.zoomConfig.scale;
-  
-      this.gesture.listen();
-      this.gesture.on('pan', this.onPan.bind(this));
-      this.gesture.on('panend', this.onPanend.bind(this));
-      this.gesture.on('pancancel',this. onPanend.bind(this));
-      this.gesture.on('tap', this.onTap.bind(this));
-      this.gesture.on('pinch', this.onPinch.bind(this));
-      this.gesture.on('pinchend', this.onPinchend.bind(this));
-      this.gesture.on('pinchcancel', this.onPinchend.bind(this));
+
+    this.transform();
+    this.afterZoomIn.emit();
+  }
+
+  zoomOut(reset?) {
+    if (!this.zoomRootElement) {
+      return;
     }
-  
-    onPan(ev) {
-      if (this.zoomConfig.scale === 1) {
-        return;
-      }
-      
-      this.setCoor(ev.deltaX, ev.deltaY);
-      this.transform();
+
+    this.zoomConfig.scale -= 1;
+
+    if (this.zoomConfig.scale < this.zoomConfig.min_scale) {
+      this.zoomConfig.scale = this.zoomConfig.min_scale;
     }
-  
-    onPanend() {
-      this.zoomConfig.last_x = this.zoomConfig.x;
-      this.zoomConfig.last_y = this.zoomConfig.y;
+
+    if (this.zoomConfig.scale === this.zoomConfig.min_scale) {
+      reset = true;
+      this.zoomAreaProvider.notifyScrollState(this.zoomAreaProvider.SCROLL_STATE.NORMAL);
     }
-  
-    onTap(ev) {
-      if (ev && ev.tapCount > 1) {
-        let reset = false;
-        this.zoomConfig.scale += .5;
-        if (this.zoomConfig.scale > 2) {
-          this.zoomConfig.scale = 1;
-          reset = true;
-        }
-  
-        this.setBounds();
-        reset ? this.transform(this.zoomConfig.max_x/2, this.zoomConfig.max_y/2) : this.transform();
-      }
+
+    reset ? this.transform(0.1, 0.1) : this.transform();
+
+    this.afterZoomOut.emit();
+  }
+
+  zoomReset() {
+    this.zoomConfig.scale = this.zoomConfig.min_scale;
+    if (this.content && this.content.scrollTop) {
+      this.content.scrollTop = 0;
     }
-  
-    onPinch(ev) {
-      this.zoomConfig.scale = this.zoomConfig.base + (ev.scale * this.zoomConfig.scale - this.zoomConfig.scale)/this.zoomConfig.scale
-      this.setBounds();
-      this.transform();
+    this.zoomOut(true);
+  }
+
+  private _pinchZoom(elm: HTMLElement, content: Content): void {
+    this.gesture = new Gesture(elm);
+
+    this.zoomConfig.original_x = this.zoom.nativeElement.clientWidth;
+    this.zoomConfig.original_y = this.zoom.nativeElement.clientHeight;
+    this.zoomConfig.max_x = this.zoomConfig.original_x;
+    this.zoomConfig.max_y = this.zoomConfig.original_y;
+    this.zoomConfig.last_scale = this.zoomConfig.scale;
+
+    this.gesture.listen();
+    this.gesture.on('pan', this.onPan.bind(this));
+    this.gesture.on('panend', this.onPanend.bind(this));
+    this.gesture.on('pancancel', this.onPanend.bind(this));
+    // this.gesture.on('tap', this.onTap.bind(this));
+    this.gesture.on('pinch', this.onPinch.bind(this));
+    this.gesture.on('pinchend', this.onPinchend.bind(this));
+    this.gesture.on('pinchcancel', this.onPinchend.bind(this));
+  }
+
+  onPan(ev) {
+    if (this.zoomConfig.scale === 1) {
+      return;
     }
-  
-    onPinchend(ev) {
-      if (this.zoomConfig.scale > 4) {
-        this.zoomConfig.scale = 4;
-      }
-  
-      if (this.zoomConfig.scale < 1) {
-        this.zoomConfig.scale = 1;
-      }
-  
-      this.zoomConfig.base = this.zoomConfig.scale;
-      this.setBounds();
-      this.transform(); 
+
+    this.setCoor(ev.deltaX, ev.deltaY);
+    this.setBounds();
+    this.transform();
+  }
+
+  onPanend() {
+    this.zoomConfig.last_x = this.zoomConfig.x < this.zoomConfig.max_x ? this.zoomConfig.x : this.zoomConfig.max_x;
+    this.zoomConfig.last_y = this.zoomConfig.y < this.zoomConfig.max_y ? this.zoomConfig.y : this.zoomConfig.max_y;
+    this.zoomConfig.center = { x: null, y: null };
+  }
+
+  onTap(ev) {
+    // if (ev && ev.tapCount > 1) {
+    //   let reset = false;
+    //   this.zoomConfig.scale += .5;
+    //   if (this.zoomConfig.scale > 2) {
+    //     this.zoomConfig.scale = 1;
+    //     reset = true;
+    //   }
+
+    //   this.setBounds();
+    //   reset ? this.transform(this.zoomConfig.max_x/2, this.zoomConfig.max_y/2) : this.transform();
+    // }
+  }
+
+  onDoubleTap(ev) {
+    this.zoomConfig.last_x = 0;
+    this.zoomConfig.last_y = 0;
+    this.setCoor(0, 0);
+    this.zoomConfig.scale = 1;
+    this.zoomConfig.last_scale = 1;
+    this.zoomConfig.center = { x: null, y: null };
+    this.setBounds();
+    this.transform();
+  }
+  onPinch(ev) {
+    let z = this.zoomConfig;
+    z.scale = Math.max(z.min_scale, Math.min(z.last_scale * ev.scale, z.max_scale));
+    let xx = (z.scale - z.last_scale) * (z.original_x / 2 - ev.center.x);
+    let yy = (z.scale - z.last_scale) * (z.original_y / 2 - ev.center.y);
+
+    this.setCoor(xx, yy)
+    this.setBounds();
+    this.transform();
+  }
+
+  onPinchend(ev) {
+    let z = this.zoomConfig;
+    z.last_scale = z.scale;
+    z.last_x = z.x;
+    z.last_y = z.y;
+    z.center = { x: null, y: null };
+  }
+
+  setBounds() {
+    this.zoomConfig.max_x = Math.ceil((this.zoomConfig.scale - 1) * this.zoom.nativeElement.clientWidth / 2);
+    this.zoomConfig.max_y = Math.ceil((this.zoomConfig.scale - 1) * this.zoom.nativeElement.clientHeight / 2);
+    if (this.zoomConfig.x > this.zoomConfig.max_x) {
+      this.zoomConfig.x = this.zoomConfig.max_x;
     }
-  
-    setBounds() {
-      let scaled_x = Math.ceil((this.zoomRootElement.offsetWidth * this.zoomConfig.scale - this.zoomRootElement.offsetWidth) / 2);
-      let scaled_y = Math.ceil((this.zoomRootElement.offsetHeight * this.zoomConfig.scale - this.zoomRootElement.offsetHeight) / 2);
-  
-      let overflow_x = Math.ceil(this.zoomConfig.original_x * this.zoomConfig.scale - this.zoomConfig.original_x);
-      let overflow_y = Math.ceil(this.zoomConfig.oh * this.zoomConfig.scale - this.zoomConfig.oh);
-  
-      this.zoomConfig.max_x = this.zoomConfig.original_x - scaled_x + overflow_x;
-      this.zoomConfig.min_x = 0 + scaled_x;
-  
-      this.zoomConfig.max_y = this.zoomConfig.original_y + scaled_y - overflow_y;
-      this.zoomConfig.min_y = 0 + scaled_y;
-  
-      this.setCoor(-scaled_x, scaled_y);
+    if (this.zoomConfig.x < -this.zoomConfig.max_x) {
+      this.zoomConfig.x = -this.zoomConfig.max_x;
     }
-  
-    setCoor(xx: number, yy: number) {
-      const compensation = this.zoomConfig.scale === 2 ? 1.05 : (this.zoomConfig.scale / 1.25);
-      this.zoomConfig.x = Math.min(Math.max((this.zoomConfig.last_x + xx), this.zoomConfig.max_x * compensation), this.zoomConfig.min_x * compensation);
-      this.zoomConfig.y = Math.min(Math.max((this.zoomConfig.last_y + yy), this.zoomConfig.max_y * compensation), this.zoomConfig.min_y * compensation);
+    if (this.zoomConfig.y > this.zoomConfig.max_y) {
+      this.zoomConfig.y = this.zoomConfig.max_y;
     }
-  
-    transform(xx?: number, yy?: number) {
-      this.zoomRootElement.style.transform = `translate3d(${xx || this.zoomConfig.x}px, ${yy || this.zoomConfig.y}px, 0) scale3d(${this.zoomConfig.scale}, ${this.zoomConfig.scale}, 1)`;
+    if (this.zoomConfig.y < -this.zoomConfig.max_y) {
+      this.zoomConfig.y = -this.zoomConfig.max_y;
     }
+  }
+
+  setCoor(xx: number, yy: number) {
+    this.zoomConfig.x = this.zoomConfig.last_x + xx;
+    this.zoomConfig.y = this.zoomConfig.last_y + yy;
+  }
+
+  transform(xx?: number, yy?: number) {
+    this.zoomRootElement.style.transform = `translate3d(${xx || this.zoomConfig.x}px, ${yy || this.zoomConfig.y}px, 0) scale3d(${this.zoomConfig.scale}, ${this.zoomConfig.scale}, 1)`;
+  }
 }
