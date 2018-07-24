@@ -101,7 +101,8 @@ var ZoomAreaComponent = /** @class */ (function () {
         this.zoomOut(true);
     };
     ZoomAreaComponent.prototype._pinchZoom = function (elm, content) {
-        this.gesture = new Gesture(elm);
+        this.zoomRootElement = elm;
+        this.gesture = new Gesture(this.zoomRootElement);
         this.zoomConfig.original_x = this.zoom.nativeElement.clientWidth;
         this.zoomConfig.original_y = this.zoom.nativeElement.clientHeight;
         this.zoomConfig.max_x = this.zoomConfig.original_x;
