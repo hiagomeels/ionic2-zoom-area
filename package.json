@@ -10,7 +10,8 @@
     "copy:scss": "cp src/zoom-area.scss dist/",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 0",
     "postchangelog": "git commit -am \"chore(): update changelog\"",
-    "shipit": "npm run build && npm publish"
+    "shipit": "npm run build && npm publish",
+    "prepare": "npm run build"
   },
   "author": "Leonardo Salles <leosallestm@gmail.com>",
   "license": "MIT",
