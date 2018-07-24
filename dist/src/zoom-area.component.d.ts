@@ -1,0 +1,56 @@
+import { EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
+import { Content } from 'ionic-angular';
+import { ZoomAreaProvider } from './zoom-area.provider';
+export declare class ZoomAreaComponent implements OnChanges {
+    zoomAreaProvider: ZoomAreaProvider;
+    zoom: any;
+    content: Content;
+    afterZoomIn: EventEmitter<any>;
+    afterZoomOut: EventEmitter<any>;
+    controls: boolean;
+    controlsChanged: EventEmitter<boolean>;
+    scale: number;
+    scaleChanged: EventEmitter<number>;
+    zoomControlsState: any;
+    zoomRootElement: any;
+    gesture: any;
+    constructor(zoomAreaProvider: ZoomAreaProvider);
+    ngOnChanges(changes: SimpleChanges): void;
+    ngAfterViewInit(): void;
+    zoomConfig: {
+        ow: number;
+        oh: number;
+        original_x: number;
+        original_y: number;
+        max_x: number;
+        max_y: number;
+        min_x: number;
+        min_y: number;
+        x: number;
+        y: number;
+        last_x: number;
+        last_y: number;
+        scale: number;
+        last_scale: number;
+        center: {
+            x: any;
+            y: any;
+        };
+        max_scale: number;
+        min_scale: number;
+    };
+    toggleZoomControls(): void;
+    zoomIn(): void;
+    zoomOut(reset?: any): void;
+    zoomReset(): void;
+    private _pinchZoom(elm, content);
+    onPan(ev: any): void;
+    onPanend(): void;
+    onTap(ev: any): void;
+    onDoubleTap(ev: any): void;
+    onPinch(ev: any): void;
+    onPinchend(ev: any): void;
+    setBounds(): void;
+    setCoor(xx: number, yy: number): void;
+    transform(xx?: number, yy?: number): void;
+}
