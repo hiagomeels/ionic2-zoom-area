@@ -112,6 +112,7 @@ var ZoomAreaComponent = /** @class */ (function () {
         this.gesture.on('pan', this.onPan.bind(this));
         this.gesture.on('panend', this.onPanend.bind(this));
         this.gesture.on('pancancel', this.onPanend.bind(this));
+        this.gesture.on('doubletap', this.onDoubleTap.bind(this));
         // this.gesture.on('tap', this.onTap.bind(this));
         this.gesture.on('pinch', this.onPinch.bind(this));
         this.gesture.on('pinchend', this.onPinchend.bind(this));
