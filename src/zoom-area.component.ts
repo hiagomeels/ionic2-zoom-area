@@ -231,8 +231,9 @@ export class ZoomAreaComponent implements OnChanges {
   }
   onPinch(ev) {
     let z = this.zoomConfig;
+    let last_scale = z.scale;
     z.scale = Math.max(z.min_scale, Math.min(z.last_scale * ev.scale, z.max_scale));
-    if (Math.abs(z.last_scale - z.scale) > z.scale_threshold) {
+    if (Math.abs(last_scale - z.scale) > z.scale_threshold) {
       var xx = (z.scale - z.last_scale) * (z.original_x / 2 - ev.center.x);
       var yy = (z.scale - z.last_scale) * (z.original_y / 2 - ev.center.y);
       this.setCoor(xx, yy);
