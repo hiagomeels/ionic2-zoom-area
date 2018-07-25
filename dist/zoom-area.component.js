@@ -26,7 +26,8 @@ var ZoomAreaComponent = /** @class */ (function () {
             last_scale: 1,
             center: { x: null, y: null },
             max_scale: 4,
-            min_scale: 1
+            min_scale: 1,
+            scale_threshold: 0.2
         };
         this.zoomControlsState = 'hidden';
     }
@@ -156,9 +157,14 @@ var ZoomAreaComponent = /** @class */ (function () {
     ZoomAreaComponent.prototype.onPinch = function (ev) {
         var z = this.zoomConfig;
         z.scale = Math.max(z.min_scale, Math.min(z.last_scale * ev.scale, z.max_scale));
-        var xx = (z.scale - z.last_scale) * (z.original_x / 2 - ev.center.x);
-        var yy = (z.scale - z.last_scale) * (z.original_y / 2 - ev.center.y);
-        this.setCoor(xx, yy);
+        if (Math.abs(z.last_scale - z.scale) > z.scale_threshold) {
+            var xx = (z.scale - z.last_scale) * (z.original_x / 2 - ev.center.x);
+            var yy = (z.scale - z.last_scale) * (z.original_y / 2 - ev.center.y);
+            this.setCoor(xx, yy);
+        }
+        else {
+            this.setCoor(ev.deltaX, ev.deltaY);
+        }
         this.setBounds();
         this.transform();
     };

@@ -38,6 +38,7 @@ export declare class ZoomAreaComponent implements OnChanges {
         };
         max_scale: number;
         min_scale: number;
+        scale_threshold: number;
     };
     toggleZoomControls(): void;
     zoomIn(): void;
