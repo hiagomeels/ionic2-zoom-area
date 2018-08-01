@@ -120,9 +120,6 @@ var ZoomAreaComponent = /** @class */ (function () {
         this.gesture.on('pinchcancel', this.onPinchend.bind(this));
     };
     ZoomAreaComponent.prototype.onPan = function (ev) {
-        if (this.zoomConfig.scale === 1) {
-            return;
-        }
         this.setCoor(ev.deltaX, ev.deltaY);
         this.setBounds();
         this.transform();

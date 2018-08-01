@@ -190,10 +190,6 @@ export class ZoomAreaComponent implements OnChanges {
   }
 
   onPan(ev) {
-    if (this.zoomConfig.scale === 1) {
-      return;
-    }
-
     this.setCoor(ev.deltaX, ev.deltaY);
     this.setBounds();
     this.transform();
