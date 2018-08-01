@@ -231,15 +231,15 @@ export class ZoomAreaComponent implements OnChanges {
   }
   onPinch(ev) {
     let z = this.zoomConfig;
-    let last_scale = z.scale;
+    // let last_scale = z.scale;
     z.scale = Math.max(z.min_scale, Math.min(z.last_scale * ev.scale, z.max_scale));
-    if (Math.abs(last_scale - z.scale) > z.scale_threshold) {
+    // if (Math.abs(last_scale - z.scale) > z.scale_threshold) {
       var xx = (z.scale - z.last_scale) * (z.original_x / 2 - ev.center.x);
       var yy = (z.scale - z.last_scale) * (z.original_y / 2 - ev.center.y);
       this.setCoor(xx, yy);
-    } else {
-      this.setCoor(ev.deltaX, ev.deltaY);
-    }
+    // } else {
+    //   this.setCoor(ev.deltaX, ev.deltaY);
+    // }
     this.setBounds();
     this.transform();
   }
@@ -253,19 +253,31 @@ export class ZoomAreaComponent implements OnChanges {
   }
 
   setBounds() {
-    this.zoomConfig.max_x = Math.ceil((this.zoomConfig.scale - 1) * this.zoom.nativeElement.clientWidth / 2);
-    this.zoomConfig.max_y = Math.ceil((this.zoomConfig.scale - 1) * this.zoom.nativeElement.clientHeight / 2);
-    if (this.zoomConfig.x > this.zoomConfig.max_x) {
-      this.zoomConfig.x = this.zoomConfig.max_x;
-    }
-    if (this.zoomConfig.x < -this.zoomConfig.max_x) {
-      this.zoomConfig.x = -this.zoomConfig.max_x;
-    }
-    if (this.zoomConfig.y > this.zoomConfig.max_y) {
-      this.zoomConfig.y = this.zoomConfig.max_y;
-    }
-    if (this.zoomConfig.y < -this.zoomConfig.max_y) {
-      this.zoomConfig.y = -this.zoomConfig.max_y;
+    // optimise scale 1 instance    
+    if (this.zoomConfig.scale == 1) {
+      this.zoomConfig.x = 0;
+      if (this.zoomConfig.y >= 0) {
+        this.zoomConfig.y = 0;
+      } else {
+        this.zoomConfig.max_y = this.zoom.nativeElement.scrollHeight - this.zoom.nativeElement.clientHeight + 112;
+        if (this.zoomConfig.y < -this.zoomConfig.max_y) {
+          this.zoomConfig.y = -this.zoomConfig.max_y;
+        }
+      }
+    } else {
+      this.zoomConfig.max_x = Math.ceil(this.zoom.nativeElement.clientWidth * (this.zoomConfig.scale - 1) / 2);
+      if (this.zoomConfig.x < -this.zoomConfig.max_x) {
+        this.zoomConfig.x = -this.zoomConfig.max_x;
+      } else if (this.zoomConfig.x > this.zoomConfig.max_x) {
+        this.zoomConfig.x = this.zoomConfig.max_x;
+      }
+      this.zoomConfig.max_y = Math.ceil(this.zoomConfig.scale * this.zoom.nativeElement.scrollHeight - this.zoom.nativeElement.clientHeight * (this.zoomConfig.scale + 1) / 2) + 112;
+      var y_top_offset = Math.ceil(this.zoom.nativeElement.clientHeight * (this.zoomConfig.scale - 1) / 2);
+      if (this.zoomConfig.y < -this.zoomConfig.max_y) {
+        this.zoomConfig.y = -this.zoomConfig.max_y;
+      } else if (this.zoomConfig.y > y_top_offset) {
+        this.zoomConfig.y = y_top_offset
+      }
     }
   }
 
