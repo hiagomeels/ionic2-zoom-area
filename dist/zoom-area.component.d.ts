@@ -18,27 +18,19 @@ export declare class ZoomAreaComponent implements OnChanges {
     ngOnChanges(changes: SimpleChanges): void;
     ngAfterViewInit(): void;
     zoomConfig: {
-        ow: number;
-        oh: number;
         original_x: number;
         original_y: number;
         max_x: number;
         max_y: number;
-        min_x: number;
-        min_y: number;
         x: number;
         y: number;
         last_x: number;
         last_y: number;
         scale: number;
         last_scale: number;
-        center: {
-            x: any;
-            y: any;
-        };
         max_scale: number;
         min_scale: number;
-        scale_threshold: number;
+        header_height: number;
     };
     toggleZoomControls(): void;
     zoomIn(): void;

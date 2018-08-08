@@ -99,24 +99,19 @@ export class ZoomAreaComponent implements OnChanges {
   }
 
   zoomConfig = {
-    ow: 0,
-    oh: 0,
     original_x: 0,
     original_y: 0,
     max_x: 0,
     max_y: 0,
-    min_x: 0,
-    min_y: 0,
     x: 0,
     y: 0,
     last_x: 0,
     last_y: 0,
     scale: 1,
     last_scale: 1,
-    center: { x: null, y: null },
     max_scale: 4,
     min_scale: 1,
-    scale_threshold : 0.2
+    header_height: 56
   };
 
   toggleZoomControls() {
@@ -174,6 +169,12 @@ export class ZoomAreaComponent implements OnChanges {
 
     this.zoomConfig.original_x = this.zoom.nativeElement.clientWidth;
     this.zoomConfig.original_y = this.zoom.nativeElement.clientHeight;
+    let headers = document.getElementsByTagName("ion-header");
+    let header_height = headers[headers.length - 1].clientHeight;
+    if (this.zoomConfig.header_height !== header_height) {
+      console.warn("header is not default height");
+    }
+    this.zoomConfig.header_height = header_height;
     this.zoomConfig.max_x = this.zoomConfig.original_x;
     this.zoomConfig.max_y = this.zoomConfig.original_y;
     this.zoomConfig.last_scale = this.zoomConfig.scale;
@@ -182,7 +183,7 @@ export class ZoomAreaComponent implements OnChanges {
     this.gesture.on('pan', this.onPan.bind(this));
     this.gesture.on('panend', this.onPanend.bind(this));
     this.gesture.on('pancancel', this.onPanend.bind(this));
-    this.gesture.on('doubletap',this.onDoubleTap.bind(this));
+    this.gesture.on('doubletap', this.onDoubleTap.bind(this));
     // this.gesture.on('tap', this.onTap.bind(this));
     this.gesture.on('pinch', this.onPinch.bind(this));
     this.gesture.on('pinchend', this.onPinchend.bind(this));
@@ -198,21 +199,9 @@ export class ZoomAreaComponent implements OnChanges {
   onPanend() {
     this.zoomConfig.last_x = this.zoomConfig.x < this.zoomConfig.max_x ? this.zoomConfig.x : this.zoomConfig.max_x;
     this.zoomConfig.last_y = this.zoomConfig.y < this.zoomConfig.max_y ? this.zoomConfig.y : this.zoomConfig.max_y;
-    this.zoomConfig.center = { x: null, y: null };
   }
 
   onTap(ev) {
-    // if (ev && ev.tapCount > 1) {
-    //   let reset = false;
-    //   this.zoomConfig.scale += .5;
-    //   if (this.zoomConfig.scale > 2) {
-    //     this.zoomConfig.scale = 1;
-    //     reset = true;
-    //   }
-
-    //   this.setBounds();
-    //   reset ? this.transform(this.zoomConfig.max_x/2, this.zoomConfig.max_y/2) : this.transform();
-    // }
   }
 
   onDoubleTap(ev) {
@@ -221,21 +210,39 @@ export class ZoomAreaComponent implements OnChanges {
     this.setCoor(0, 0);
     this.zoomConfig.scale = 1;
     this.zoomConfig.last_scale = 1;
-    this.zoomConfig.center = { x: null, y: null };
     this.setBounds();
     this.transform();
   }
+
+  // TODO- I thought the h should be the element's scrollHeight, howeverthe now it is only working on original_y
+  // Maybe it is becasue of the css settings
+  // zoom-area .zoom {
+  // width: 100% !important;
+  // height: 100% !important;
+  // }
+  // Changing this may affect other stuff
   onPinch(ev) {
     let z = this.zoomConfig;
-    // let last_scale = z.scale;
+    let last_scale = z.scale
     z.scale = Math.max(z.min_scale, Math.min(z.last_scale * ev.scale, z.max_scale));
-    // if (Math.abs(last_scale - z.scale) > z.scale_threshold) {
-      var xx = (z.scale - z.last_scale) * (z.original_x / 2 - ev.center.x);
-      var yy = (z.scale - z.last_scale) * (z.original_y / 2 - ev.center.y);
-      this.setCoor(xx, yy);
-    // } else {
-    //   this.setCoor(ev.deltaX, ev.deltaY);
-    // }
+
+    //Vector Focusing Feature
+    //(a,b) is the new (x,y) after rectangle center scalling by k
+    // a = k(x-w/2)+w/2
+    // b = k(x-h/2)+h/2
+    let k = z.scale / last_scale
+    let x = ev.center.x;
+    let y = ev.center.y - z.header_height - z.y;
+
+    let a = k * (x - z.original_x / 2) + z.original_x / 2;
+    let b = k * (y - z.original_y / 2) + z.original_y / 2;
+
+    let dx = a - x;
+    let dy = b - y;
+
+    z.x = z.x - dx;
+    z.y = z.y - dy;
+
     this.setBounds();
     this.transform();
   }
@@ -245,34 +252,35 @@ export class ZoomAreaComponent implements OnChanges {
     z.last_scale = z.scale;
     z.last_x = z.x;
     z.last_y = z.y;
-    z.center = { x: null, y: null };
   }
 
   setBounds() {
-    // optimise scale 1 instance    
-    if (this.zoomConfig.scale == 1) {
-      this.zoomConfig.x = 0;
-      if (this.zoomConfig.y >= 0) {
-        this.zoomConfig.y = 0;
+    // optimise scale 1 instance
+    let z = this.zoomConfig;
+
+    if (z.scale == 1) {
+      z.x = 0;
+      if (z.y >= 0) {
+        z.y = 0;
       } else {
-        this.zoomConfig.max_y = this.zoom.nativeElement.scrollHeight - this.zoom.nativeElement.clientHeight + 112;
-        if (this.zoomConfig.y < -this.zoomConfig.max_y) {
-          this.zoomConfig.y = -this.zoomConfig.max_y;
+        z.max_y = this.zoom.nativeElement.scrollHeight - this.zoom.nativeElement.clientHeight + z.header_height * 2;
+        if (z.y < -z.max_y) {
+          z.y = -z.max_y;
         }
       }
     } else {
-      this.zoomConfig.max_x = Math.ceil(this.zoom.nativeElement.clientWidth * (this.zoomConfig.scale - 1) / 2);
-      if (this.zoomConfig.x < -this.zoomConfig.max_x) {
-        this.zoomConfig.x = -this.zoomConfig.max_x;
-      } else if (this.zoomConfig.x > this.zoomConfig.max_x) {
-        this.zoomConfig.x = this.zoomConfig.max_x;
+      z.max_x = Math.ceil(this.zoom.nativeElement.clientWidth * (z.scale - 1) / 2);
+      if (z.x < -z.max_x) {
+        z.x = -z.max_x;
+      } else if (z.x > z.max_x) {
+        z.x = z.max_x;
       }
-      this.zoomConfig.max_y = Math.ceil(this.zoomConfig.scale * this.zoom.nativeElement.scrollHeight - this.zoom.nativeElement.clientHeight * (this.zoomConfig.scale + 1) / 2) + 112;
-      var y_top_offset = Math.ceil(this.zoom.nativeElement.clientHeight * (this.zoomConfig.scale - 1) / 2);
-      if (this.zoomConfig.y < -this.zoomConfig.max_y) {
-        this.zoomConfig.y = -this.zoomConfig.max_y;
-      } else if (this.zoomConfig.y > y_top_offset) {
-        this.zoomConfig.y = y_top_offset
+      z.max_y = Math.ceil(z.scale * this.zoom.nativeElement.scrollHeight - this.zoom.nativeElement.clientHeight * (z.scale + 1) / 2) + z.header_height * 2;
+      var y_top_offset = Math.ceil(this.zoom.nativeElement.clientHeight * (z.scale - 1) / 2);
+      if (z.y < -z.max_y) {
+        z.y = -z.max_y;
+      } else if (z.y > y_top_offset) {
+        z.y = y_top_offset
       }
     }
   }
